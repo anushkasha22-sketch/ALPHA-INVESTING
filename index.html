@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Alpha Investing – Paper Trading Dashboard</title>
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+
+  <style>
+    :root{
+      --bg:#050816;
+      --bg-elevated:#0c1020;
+      --bg-card:#11182b;
+      --border:#1e2740;
+      --text:#f9fbff;
+      --muted:#9fb2d3;
+      --accent:#f0b73b;
+      --accent-soft:#f9e2a6;
+      --danger:#f97373;
+      --success:#22c55e;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{
+      background:radial-gradient(circle at top,#101735 0,var(--bg) 45%);
+      color:var(--text);
+      font-family:'Poppins',system-ui,-apple-system,sans-serif;
+    }
+    a{text-decoration:none;color:inherit}
+
+    /* ---------- NAVBAR ---------- */
+    .nav{
+      position:sticky;top:0;z-index:20;
+      backdrop-filter:blur(10px);
+      background:linear-gradient(90deg,rgba(5,8,22,0.96),rgba(5,8,22,0.85));
+      border-bottom:1px solid rgba(255,255,255,0.04);
+    }
+    .nav-inner{
+      max-width:1200px;margin:0 auto;
+      padding:14px 24px;
+      display:flex;align-items:center;justify-content:space-between;
+    }
+    .brand{
+      display:flex;align-items:center;gap:10px;
+    }
+    .brand img{height:42px;border-radius:6px}
+    .brand-text{display:flex;flex-direction:column;}
+    .brand-text span:first-child{font-weight:700;font-size:18px;letter-spacing:0.04em}
+    .brand-text span:last-child{font-size:11px;color:var(--muted)}
+    .nav-links{
+      display:flex;align-items:center;gap:18px;font-size:14px;
+    }
+    .nav-links a{color:var(--muted);font-weight:500}
+    .nav-links a.active{color:var(--accent);font-weight:600}
+    .btn-primary{
+      border:none;border-radius:999px;
+      padding:8px 18px;
+      background:linear-gradient(135deg,var(--accent),#ffdf7b);
+      color:#1b2337;font-weight:700;font-size:13px;cursor:pointer;
+      box-shadow:0 8px 18px rgba(0,0,0,0.45);
+    }
+
+    /* ---------- HERO STRIP ---------- */
+    .hero{
+      max-width:1200px;margin:16px auto 0;
+      padding:18px 24px;
+      display:flex;align-items:center;justify-content:space-between;
+      border-radius:18px;
+      background:linear-gradient(135deg,#131b3a,#050816);
+      border:1px solid rgba(255,255,255,0.04);
+      box-shadow:0 16px 45px rgba(3,7,18,0.7);
+    }
+    .hero-left h1{font-size:22px;margin-bottom:4px}
+    .hero-left p{font-size:13px;color:var(--muted)}
+    .hero-metrics{
+      display:flex;gap:18px;font-size:12px;
+    }
+    .metric{
+      padding:10px 14px;
+      border-radius:12px;
+      background:rgba(15,23,42,0.7);
+      border:1px solid rgba(148,163,184,0.3);
+      min-width:120px;
+    }
+    .metric-label{font-size:11px;color:var(--muted);}
+    .metric-value{font-weight:600;margin-top:4px;}
+
+    /* ---------- MAIN LAYOUT ---------- */
+    .main{
+      max-width:1200px;margin:16px auto 28px;
+      padding:0 24px 24px;
+    }
+    .grid{
+      display:grid;
+      grid-template-columns:260px minmax(0,1fr) 320px;
+      gap:18px;
+    }
+    .card{
+      background:var(--bg-card);
+      border-radius:16px;
+      border:1px solid var(--border);
+      padding:16px;
+      box-shadow:0 14px 30px rgba(3,7,18,0.7);
+    }
+    .card h3{font-size:15px;margin-bottom:8px}
+    .section-title{
+      display:flex;align-items:center;justify-content:space-between;
+      margin-bottom:10px;font-size:14px;
+    }
+    .section-title small{color:var(--muted);font-size:11px}
+
+    /* Watchlist */
+    .watchlist{
+      display:flex;flex-direction:column;gap:8px;margin-top:6px;
+    }
+    .watch-item{
+      padding:10px 12px;border-radius:10px;
+      background:linear-gradient(135deg,#0f172a,#111827);
+      border:1px solid rgba(148,163,184,0.25);
+      display:flex;justify-content:space-between;align-items:center;
+      cursor:pointer;
+      transition:transform .12s ease, box-shadow .12s ease, border-color .12s;
+    }
+    .watch-item:hover{
+      transform:translateY(-1px);
+      border-color:var(--accent-soft);
+      box-shadow:0 8px 22px rgba(15,23,42,0.8);
+    }
+    .watch-symbol{font-weight:600;font-size:13px}
+    .watch-price{font-weight:500;font-size:13px}
+    .watch-change{font-size:11px}
+    .watch-change.pos{color:var(--success)}
+    .watch-change.neg{color:var(--danger)}
+    .input-pill{
+      margin-top:10px;
+      display:flex;gap:8px;
+    }
+    .input-pill input{
+      flex:1;padding:8px 10px;border-radius:999px;
+      border:none;background:#020617;color:var(--text);
+      font-size:12px;border:1px solid var(--border);
+    }
+    .btn-secondary{
+      font-size:12px;
+      padding:7px 12px;
+      border-radius:999px;
+      border:1px solid var(--border);
+      background:#020617;color:var(--muted);cursor:pointer;
+    }
+
+    /* Center: chart */
+    .chart-header{
+      display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;
+    }
+    .chip-row{display:flex;gap:8px;font-size:11px;}
+    .chip{
+      padding:4px 9px;border-radius:999px;
+      background:#020617;border:1px solid var(--border);
+      color:var(--muted);cursor:pointer;
+    }
+    .chip.active{background:rgba(250,204,21,0.08);border-color:var(--accent-soft);color:var(--accent-soft);}
+    #chartShell{
+      border-radius:14px;
+      background:radial-gradient(circle at top,#1d2745,#050816);
+      border:1px solid rgba(148,163,184,0.35);
+      padding:14px;
+      height:320px;
+      display:flex;align-items:center;justify-content:center;
+      color:var(--muted);font-size:13px;text-align:center;
+    }
+    .chart-footer{
+      display:flex;justify-content:space-between;align-items:center;margin-top:10px;font-size:11px;color:var(--muted);
+    }
+
+    /* Right: order, portfolio, news */
+    .order-form label{
+      font-size:11px;color:var(--muted);margin-top:8px;display:block;
+    }
+    .order-form input,
+    .order-form select{
+      width:100%;margin-top:4px;
+      padding:8px 10px;border-radius:10px;
+      border:1px solid var(--border);
+      background:#020617;color:var(--text);
+      font-size:12px;
+    }
+    .order-actions{
+      display:flex;gap:8px;margin-top:10px;
+    }
+    .btn-buy,.btn-sell{
+      flex:1;padding:8px 0;border-radius:999px;border:none;
+      font-weight:600;font-size:13px;cursor:pointer;
+    }
+    .btn-buy{background:rgba(34,197,94,0.12);color:var(--success);border:1px solid rgba(34,197,94,0.5);}
+    .btn-sell{background:rgba(239,68,68,0.12);color:var(--danger);border:1px solid rgba(239,68,68,0.5);}
+    .small-table{width:100%;border-collapse:collapse;font-size:11px;margin-top:8px;}
+    .small-table th,.small-table td{padding:6px 4px;border-bottom:1px dashed rgba(148,163,184,0.35);text-align:left;}
+
+    .news-item{font-size:11px;color:var(--muted);margin-top:6px;}
+    .news-item b{color:var(--accent-soft);}
+
+    /* Tools / Learn section */
+    .subgrid{
+      display:grid;
+      grid-template-columns:2fr 1.4fr;
+      gap:18px;
+      margin-top:18px;
+    }
+    .pill-card{
+      background:var(--bg-card);
+      border-radius:16px;
+      border:1px solid var(--border);
+      padding:16px;
+      font-size:12px;
+      box-shadow:0 10px 24px rgba(15,23,42,0.7);
+    }
+    .pill-row{display:flex;gap:10px;margin-top:10px;flex-wrap:wrap;}
+    .pill{
+      padding:6px 10px;border-radius:999px;
+      background:#020617;border:1px solid var(--border);
+      font-size:11px;color:var(--muted);
+    }
+
+    /* Footer */
+    footer{
+      border-top:1px solid rgba(15,23,42,0.9);
+      padding:18px 24px;
+      font-size:11px;
+      color:var(--muted);
+      text-align:center;
+      background:#020617;
+    }
+
+    @media(max-width:1040px){
+      .grid{grid-template-columns:1fr;}
+      .hero{flex-direction:column;align-items:flex-start;gap:12px;}
+      .hero-metrics{margin-top:8px;}
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <header class="nav">
+    <div class="nav-inner">
+      <div class="brand">
+        <img src="Logo.jpeg" alt="Alpha Investing Logo">
+        <div class="brand-text">
+          <span>ALPHA INVESTING</span>
+          <span>Paper trading • Indian markets</span>
+        </div>
+      </div>
+      <div class="nav-links">
+        <a href="#" class="active">Dashboard</a>
+        <a href="#">Markets</a>
+        <a href="#">Portfolio</a>
+        <a href="#">Tools</a>
+        <a href="#">Learn</a>
+        <button class="btn-primary">Create free demo</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- HERO STRIP -->
+  <section class="hero">
+    <div class="hero-left">
+      <h1>Practice pro-level trading with a premium, clutter-free terminal.</h1>
+      <p>Alpha Investing mirrors a modern broker experience while keeping your money safe using virtual capital.</p>
+    </div>
+    <div class="hero-metrics">
+      <div class="metric">
+        <div class="metric-label">Demo Capital</div>
+        <div class="metric-value">₹10,00,000</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Today’s P&L</div>
+        <div class="metric-value" style="color:var(--success)">+₹4,250</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Win Rate</div>
+        <div class="metric-value">63%</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MAIN DASHBOARD -->
+  <main class="main">
+    <div class="grid">
+      <!-- LEFT: WATCHLIST -->
+      <aside class="card">
+        <div class="section-title">
+          <span>Watchlist</span>
+          <small>Tap a stock to focus</small>
+        </div>
+        <div class="watchlist" id="watchlist">
+          <!-- Static for now (we'll wire APIs later) -->
+          <div class="watch-item" data-symbol="RELIANCE">
+            <div>
+              <div class="watch-symbol">RELIANCE</div>
+              <div class="watch-change pos">+1.24% · +₹32.40</div>
+            </div>
+            <div class="watch-price">₹2,640.50</div>
+          </div>
+          <div class="watch-item" data-symbol="TCS">
+            <div>
+              <div class="watch-symbol">TCS</div>
+              <div class="watch-change pos">+0.68% · +₹22.60</div>
+            </div>
+            <div class="watch-price">₹3,345.10</div>
+          </div>
+          <div class="watch-item" data-symbol="HDFCBANK">
+            <div>
+              <div class="watch-symbol">HDFCBANK</div>
+              <div class="watch-change neg">-0.32% · -₹4.80</div>
+            </div>
+            <div class="watch-price">₹1,491.40</div>
+          </div>
+          <div class="watch-item" data-symbol="INFY">
+            <div>
+              <div class="watch-symbol">INFY</div>
+              <div class="watch-change pos">+0.17% · +₹2.10</div>
+            </div>
+            <div class="watch-price">₹1,401.25</div>
+          </div>
+        </div>
+
+        <div class="input-pill">
+          <input id="symbolInput" placeholder="Add symbol e.g. NIFTY, SBIN" />
+          <button class="btn-secondary" id="addSymbolBtn">Add</button>
+        </div>
+      </aside>
+
+      <!-- CENTER: CHART & OVERVIEW (UI only for now) -->
+      <section class="card">
+        <div class="chart-header">
+          <div>
+            <div style="font-size:13px;font-weight:600" id="chartSymbolTitle">RELIANCE · NSE</div>
+            <div style="font-size:11px;color:var(--muted)" id="chartSymbolSub">
+              Candles & indicators will appear here once APIs are connected.
+            </div>
+          </div>
+          <div class="chip-row">
+            <div class="chip active" data-interval="1D">1D</div>
+            <div class="chip" data-interval="1W">1W</div>
+            <div class="chip" data-interval="1M">1M</div>
+            <div class="chip" data-interval="6M">6M</div>
+            <div class="chip" data-interval="1Y">1Y</div>
+          </div>
+        </div>
+
+        <div id="chartShell">
+          <div>
+            <p style="margin-bottom:6px;">Interactive price chart</p>
+            <p>In the live build, this area will render real candlesticks from APIs (Finnhub / broker) with drawing tools and indicators.</p>
+          </div>
+        </div>
+
+        <div class="chart-footer">
+          <div>Open: <b>₹2,612.00</b> · High: <b>₹2,660.40</b> · Low: <b>₹2,598.70</b></div>
+          <div>Volume: <b>18.2L</b></div>
+        </div>
+      </section>
+
+      <!-- RIGHT: ORDER, PORTFOLIO, NEWS -->
+      <aside>
+        <!-- ORDER -->
+        <section class="card">
+          <div class="section-title">
+            <span>Quick Paper Order</span>
+            <small>Simulation only</small>
+          </div>
+          <form class="order-form" onsubmit="event.preventDefault();">
+            <label>Symbol</label>
+            <select id="orderSymbol">
+              <option value="RELIANCE">RELIANCE</option>
+              <option value="TCS">TCS</option>
+              <option value="HDFCBANK">HDFCBANK</option>
+              <option value="INFY">INFY</option>
+            </select>
+            <label>Quantity</label>
+            <input type="number" id="orderQty" value="10" min="1" />
+            <div class="order-actions">
+              <button type="button" class="btn-buy" id="buyBtn">BUY</button>
+              <button type="button" class="btn-sell" id="sellBtn">SELL</button>
+            </div>
+          </form>
+        </section>
+
+        <!-- PORTFOLIO -->
+        <section class="card" style="margin-top:14px;">
+          <div class="section-title">
+            <span>Portfolio Snapshot</span>
+            <small>Paper account</small>
+          </div>
+          <table class="small-table" id="portfolioTable">
+            <thead>
+              <tr><th>Symbol</th><th>Qty</th><th>Avg</th><th>P&L</th></tr>
+            </thead>
+            <tbody>
+              <tr><td colspan="4" style="color:var(--muted);padding-top:4px;">No positions yet. Place a BUY trade to start.</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <!-- NEWS / INSIGHTS -->
+        <section class="card" style="margin-top:14px;">
+          <div class="section-title">
+            <span>Today’s Pulse</span>
+            <small>Curated ideas</small>
+          </div>
+          <div class="news-item"><b>• Nifty50 holds above key support.</b><br/>Options writers keep premium as volatility cools down.</div>
+          <div class="news-item"><b>• IT & banks lead intraday recovery.</b><br/>Paper trade sector rotations to understand correlation.</div>
+          <div class="news-item"><b>• Learn: Risk per trade</b><br/>Never risk more than 1–2% of capital on a single idea.</div>
+        </section>
+      </aside>
+    </div>
+
+    <!-- TOOLS & LEARN -->
+    <section class="subgrid">
+      <div class="pill-card">
+        <div class="section-title">
+          <span>Tools you’ll get in Alpha Investing</span>
+          <small>Coming soon</small>
+        </div>
+        <div class="pill-row">
+          <span class="pill">SIP Calculator</span>
+          <span class="pill">Brokerage & Tax Estimator</span>
+          <span class="pill">Options P&L Builder</span>
+          <span class="pill">Basket Orders</span>
+          <span class="pill">Strategy Backtesting</span>
+        </div>
+      </div>
+      <div class="pill-card">
+        <div class="section-title">
+          <span>Learn & level up</span>
+          <small>Structured path</small>
+        </div>
+        <ul style="font-size:11px;color:var(--muted);margin-left:16px;margin-top:6px;line-height:1.6;">
+          <li>Alpha 101: Basics of stocks, indices & derivatives.</li>
+          <li>Risk First: Position sizing and drawdown control.</li>
+          <li>Playbooks: Breakout, mean-reversion & swing strategies.</li>
+        </ul>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    © 2025 Alpha Investing. UI prototype inspired by modern Indian brokers. Data & order flows are simulated in this version.
+  </footer>
+
+  <script>
+    // VERY LIGHT JS: watchlist click -> update chart title (UI only)
+    document.querySelectorAll('.watch-item').forEach(item=>{
+      item.addEventListener('click',()=>{
+        const sym = item.dataset.symbol || item.querySelector('.watch-symbol').textContent;
+        document.getElementById('chartSymbolTitle').textContent = sym + ' · NSE';
+      });
+    });
+
+    // Interval chips UI state
+    document.querySelectorAll('.chip').forEach(ch=>{
+      ch.addEventListener('click',()=>{
+        document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+        ch.classList.add('active');
+      });
+    });
+
+    // Add symbol (just UI list for now)
+    document.getElementById('addSymbolBtn').addEventListener('click',()=>{
+      const input = document.getElementById('symbolInput');
+      const value = input.value.trim().toUpperCase();
+      if(!value) return;
+      const container = document.getElementById('watchlist');
+      const div = document.createElement('div');
+      div.className='watch-item';
+      div.dataset.symbol=value;
+      div.innerHTML = `
+        <div>
+          <div class="watch-symbol">${value}</div>
+          <div class="watch-change pos">0.00% · ₹0.00</div>
+        </div>
+        <div class="watch-price">₹0.00</div>
+      `;
+      div.addEventListener('click',()=>{
+        document.getElementById('chartSymbolTitle').textContent = value + ' · NSE';
+      });
+      container.appendChild(div);
+      input.value='';
+    });
+
+    // Simple in-memory paper portfolio
+    const portfolio = {};
+    const portfolioTable = document.getElementById('portfolioTable').querySelector('tbody');
+
+    function renderPortfolio(){
+      portfolioTable.innerHTML='';
+      const symbols = Object.keys(portfolio);
+      if(symbols.length===0){
+        portfolioTable.innerHTML='<tr><td colspan="4" style="color:var(--muted);padding-top:4px;">No positions yet. Place a BUY trade to start.</td></tr>';
+        return;
+      }
+      symbols.forEach(sym=>{
+        const pos = portfolio[sym];
+        const pnl = (pos.last - pos.avg) * pos.qty;
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${sym}</td>
+          <td>${pos.qty}</td>
+          <td>₹${pos.avg.toFixed(2)}</td>
+          <td style="color:${pnl>=0?'#22c55e':'#f97373'}">${pnl>=0?'+':''}₹${pnl.toFixed(2)}</td>
+        `;
+        portfolioTable.appendChild(row);
+      });
+    }
+
+    function simulatePrice(symbol){
+      // purely fake numbers based on symbol length – placeholder until APIs
+      const base = 2000 + symbol.length * 70;
+      return base + (Math.random()-0.5)*40;
+    }
+
+    function placeTrade(side){
+      const sym = document.getElementById('orderSymbol').value;
+      const qty = Number(document.getElementById('orderQty').value) || 0;
+      if(qty<=0) return alert('Enter a valid quantity');
+      const price = simulatePrice(sym);
+
+      if(side==='BUY'){
+        if(!portfolio[sym]) portfolio[sym]={qty:0,avg:0,last:price};
+        const p = portfolio[sym];
+        const newAvg = (p.avg*p.qty + price*qty)/(p.qty+qty);
+        p.qty += qty; p.avg = newAvg; p.last = price;
+      }else{
+        if(!portfolio[sym] || portfolio[sym].qty < qty){
+          return alert('Not enough quantity in paper portfolio');
+        }
+        const p = portfolio[sym];
+        p.qty -= qty; p.last = price;
+        if(p.qty===0) delete portfolio[sym];
+      }
+      renderPortfolio();
+      alert(`Paper ${side} order executed for ${qty} ${sym} at ₹${price.toFixed(2)} (demo).`);
+    }
+
+    document.getElementById('buyBtn').addEventListener('click',()=>placeTrade('BUY'));
+    document.getElementById('sellBtn').addEventListener('click',()=>placeTrade('SELL'));
+  </script>
+
+</body>
+</html>
