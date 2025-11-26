@@ -5,8 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Alpha Investing – Paper Trading Dashboard</title>
 
-  <!-- Fonts -->
+  <!-- Font -->
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+
+  <!-- Chart.js for price chart -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <style>
     :root{
@@ -26,6 +29,7 @@
       background:radial-gradient(circle at top,#101735 0,var(--bg) 45%);
       color:var(--text);
       font-family:'Poppins',system-ui,-apple-system,sans-serif;
+      scroll-behavior:smooth;
     }
     a{text-decoration:none;color:inherit}
 
@@ -33,39 +37,44 @@
     .nav{
       position:sticky;top:0;z-index:20;
       backdrop-filter:blur(10px);
-      background:linear-gradient(90deg,rgba(5,8,22,0.96),rgba(5,8,22,0.85));
+      background:linear-gradient(90deg,rgba(5,8,22,0.96),rgba(5,8,22,0.9));
       border-bottom:1px solid rgba(255,255,255,0.04);
     }
     .nav-inner{
       max-width:1200px;margin:0 auto;
-      padding:14px 24px;
+      padding:10px 16px;
       display:flex;align-items:center;justify-content:space-between;
+      gap:12px;
     }
     .brand{
       display:flex;align-items:center;gap:10px;
     }
-    .brand img{height:42px;border-radius:6px}
+    .brand img{height:38px;border-radius:6px}
     .brand-text{display:flex;flex-direction:column;}
     .brand-text span:first-child{font-weight:700;font-size:18px;letter-spacing:0.04em}
     .brand-text span:last-child{font-size:11px;color:var(--muted)}
+
     .nav-links{
-      display:flex;align-items:center;gap:18px;font-size:14px;
+      display:flex;align-items:center;gap:16px;
+      font-size:13px;
     }
     .nav-links a{color:var(--muted);font-weight:500}
     .nav-links a.active{color:var(--accent);font-weight:600}
     .btn-primary{
       border:none;border-radius:999px;
-      padding:8px 18px;
+      padding:8px 16px;
       background:linear-gradient(135deg,var(--accent),#ffdf7b);
-      color:#1b2337;font-weight:700;font-size:13px;cursor:pointer;
+      color:#1b2337;font-weight:700;font-size:12px;cursor:pointer;
       box-shadow:0 8px 18px rgba(0,0,0,0.45);
+      white-space:nowrap;
     }
 
-    /* ---------- HERO STRIP ---------- */
+    /* ---------- HERO ---------- */
     .hero{
       max-width:1200px;margin:16px auto 0;
-      padding:18px 24px;
+      padding:18px 16px;
       display:flex;align-items:center;justify-content:space-between;
+      gap:18px;
       border-radius:18px;
       background:linear-gradient(135deg,#131b3a,#050816);
       border:1px solid rgba(255,255,255,0.04);
@@ -74,22 +83,23 @@
     .hero-left h1{font-size:22px;margin-bottom:4px}
     .hero-left p{font-size:13px;color:var(--muted)}
     .hero-metrics{
-      display:flex;gap:18px;font-size:12px;
+      display:flex;gap:12px;font-size:12px;
+      flex-wrap:wrap;justify-content:flex-end;
     }
     .metric{
-      padding:10px 14px;
+      padding:8px 12px;
       border-radius:12px;
       background:rgba(15,23,42,0.7);
       border:1px solid rgba(148,163,184,0.3);
-      min-width:120px;
+      min-width:110px;
     }
     .metric-label{font-size:11px;color:var(--muted);}
     .metric-value{font-weight:600;margin-top:4px;}
 
-    /* ---------- MAIN LAYOUT ---------- */
+    /* ---------- MAIN GRID ---------- */
     .main{
       max-width:1200px;margin:16px auto 28px;
-      padding:0 24px 24px;
+      padding:0 16px 24px;
     }
     .grid{
       display:grid;
@@ -103,7 +113,6 @@
       padding:16px;
       box-shadow:0 14px 30px rgba(3,7,18,0.7);
     }
-    .card h3{font-size:15px;margin-bottom:8px}
     .section-title{
       display:flex;align-items:center;justify-content:space-between;
       margin-bottom:10px;font-size:14px;
@@ -147,13 +156,15 @@
       border-radius:999px;
       border:1px solid var(--border);
       background:#020617;color:var(--muted);cursor:pointer;
+      white-space:nowrap;
     }
 
-    /* Center: chart */
+    /* Chart */
     .chart-header{
       display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;
+      gap:10px;
     }
-    .chip-row{display:flex;gap:8px;font-size:11px;}
+    .chip-row{display:flex;gap:8px;font-size:11px;flex-wrap:wrap;}
     .chip{
       padding:4px 9px;border-radius:999px;
       background:#020617;border:1px solid var(--border);
@@ -167,13 +178,17 @@
       padding:14px;
       height:320px;
       display:flex;align-items:center;justify-content:center;
-      color:var(--muted);font-size:13px;text-align:center;
+    }
+    #priceChart{
+      width:100%;
+      height:100%;
     }
     .chart-footer{
       display:flex;justify-content:space-between;align-items:center;margin-top:10px;font-size:11px;color:var(--muted);
+      flex-wrap:wrap;gap:6px;
     }
 
-    /* Right: order, portfolio, news */
+    /* Order & portfolio */
     .order-form label{
       font-size:11px;color:var(--muted);margin-top:8px;display:block;
     }
@@ -200,7 +215,7 @@
     .news-item{font-size:11px;color:var(--muted);margin-top:6px;}
     .news-item b{color:var(--accent-soft);}
 
-    /* Tools / Learn section */
+    /* Tools / Learn */
     .subgrid{
       display:grid;
       grid-template-columns:2fr 1.4fr;
@@ -222,48 +237,121 @@
       font-size:11px;color:var(--muted);
     }
 
+    /* Page sections */
+    .page-section{
+      max-width:1200px;
+      margin:0 auto 28px;
+      padding:0 16px;
+    }
+    .page-section h2{
+      font-size:18px;margin-bottom:10px;
+    }
+    .section-description{
+      font-size:12px;color:var(--muted);margin-bottom:14px;
+    }
+    .markets-grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+      gap:14px;
+    }
+    .mini-card{
+      background:var(--bg-card);
+      border-radius:14px;
+      border:1px solid var(--border);
+      padding:14px;
+      font-size:12px;
+    }
+    .tag{
+      display:inline-block;
+      font-size:10px;
+      padding:3px 7px;
+      border-radius:999px;
+      background:#020617;
+      border:1px solid var(--border);
+      color:var(--muted);
+      margin-bottom:6px;
+    }
+
+    .portfolio-summary{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+      gap:14px;
+      margin-top:12px;
+    }
+    .pt-steps{
+      list-style:decimal;
+      padding-left:18px;
+      font-size:12px;
+      color:var(--muted);
+      line-height:1.7;
+    }
+
     /* Footer */
     footer{
       border-top:1px solid rgba(15,23,42,0.9);
-      padding:18px 24px;
+      padding:18px 16px;
       font-size:11px;
       color:var(--muted);
       text-align:center;
       background:#020617;
     }
 
+    /* Responsive */
     @media(max-width:1040px){
       .grid{grid-template-columns:1fr;}
       .hero{flex-direction:column;align-items:flex-start;gap:12px;}
-      .hero-metrics{margin-top:8px;}
+      .hero-metrics{justify-content:flex-start;}
+    }
+    @media(max-width:768px){
+      .nav-inner{
+        flex-wrap:wrap;
+        justify-content:space-between;
+      }
+      .nav-links{
+        width:100%;
+        justify-content:flex-end;
+        flex-wrap:wrap;
+        gap:10px;
+      }
+      .hero-left h1{font-size:18px;}
+      .hero-left p{font-size:12px;}
+      #chartShell{height:260px;}
+    }
+    @media(max-width:540px){
+      .nav-inner{flex-direction:column;align-items:flex-start;}
+      .nav-links{justify-content:flex-start;}
+      .hero{margin-top:10px;padding:14px 12px;}
+      .main{padding:0 12px;}
+      .page-section{padding:0 12px;}
+      .card{padding:12px;}
     }
   </style>
 </head>
 <body>
 
-  <!-- NAVBAR -->
+  <!-- NAV -->
   <header class="nav">
     <div class="nav-inner">
       <div class="brand">
-        <img src="Logo.jpeg" alt="Alpha Investing Logo">
+        <img src="Logo.jpeg" alt="Alpha Investing Logo" />
         <div class="brand-text">
           <span>ALPHA INVESTING</span>
-          <span>Paper trading • Indian markets</span>
+          <span>Paper trading · global markets demo</span>
         </div>
       </div>
       <div class="nav-links">
-        <a href="#" class="active">Dashboard</a>
-        <a href="#">Markets</a>
-        <a href="#">Portfolio</a>
-        <a href="#">Tools</a>
-        <a href="#">Learn</a>
+        <a href="#home" class="active">Dashboard</a>
+        <a href="#markets">Markets</a>
+        <a href="#portfolio-main">Portfolio</a>
+        <a href="#paper-trading">Paper Trading</a>
+        <a href="#learn">Learn</a>
         <button class="btn-primary">Create free demo</button>
       </div>
     </div>
   </header>
 
-  <!-- HERO STRIP -->
-  <section class="hero">
+  <!-- HERO -->
+  <section class="hero" id="home">
     <div class="hero-left">
       <h1>Practice pro-level trading with a premium, clutter-free terminal.</h1>
       <p>Alpha Investing mirrors a modern broker experience while keeping your money safe using virtual capital.</p>
@@ -287,97 +375,56 @@
   <!-- MAIN DASHBOARD -->
   <main class="main">
     <div class="grid">
-      <!-- LEFT: WATCHLIST -->
+      <!-- WATCHLIST -->
       <aside class="card">
         <div class="section-title">
           <span>Watchlist</span>
           <small>Tap a stock to focus</small>
         </div>
-        <div class="watchlist" id="watchlist">
-          <!-- Static for now (we'll wire APIs later) -->
-          <div class="watch-item" data-symbol="RELIANCE">
-            <div>
-              <div class="watch-symbol">RELIANCE</div>
-              <div class="watch-change pos">+1.24% · +₹32.40</div>
-            </div>
-            <div class="watch-price">₹2,640.50</div>
-          </div>
-          <div class="watch-item" data-symbol="TCS">
-            <div>
-              <div class="watch-symbol">TCS</div>
-              <div class="watch-change pos">+0.68% · +₹22.60</div>
-            </div>
-            <div class="watch-price">₹3,345.10</div>
-          </div>
-          <div class="watch-item" data-symbol="HDFCBANK">
-            <div>
-              <div class="watch-symbol">HDFCBANK</div>
-              <div class="watch-change neg">-0.32% · -₹4.80</div>
-            </div>
-            <div class="watch-price">₹1,491.40</div>
-          </div>
-          <div class="watch-item" data-symbol="INFY">
-            <div>
-              <div class="watch-symbol">INFY</div>
-              <div class="watch-change pos">+0.17% · +₹2.10</div>
-            </div>
-            <div class="watch-price">₹1,401.25</div>
-          </div>
-        </div>
+        <div class="watchlist" id="watchlist"></div>
 
         <div class="input-pill">
-          <input id="symbolInput" placeholder="Add symbol e.g. NIFTY, SBIN" />
+          <input id="symbolInput" placeholder="Add symbol e.g. NFLX" />
           <button class="btn-secondary" id="addSymbolBtn">Add</button>
         </div>
       </aside>
 
-      <!-- CENTER: CHART & OVERVIEW (UI only for now) -->
+      <!-- CHART -->
       <section class="card">
         <div class="chart-header">
           <div>
-            <div style="font-size:13px;font-weight:600" id="chartSymbolTitle">RELIANCE · NSE</div>
-            <div style="font-size:11px;color:var(--muted)" id="chartSymbolSub">
-              Candles & indicators will appear here once APIs are connected.
-            </div>
+            <div style="font-size:13px;font-weight:600" id="chartSymbolTitle">AAPL · Live</div>
+            <div style="font-size:11px;color:var(--muted)">Price chart from Finnhub demo data.</div>
           </div>
           <div class="chip-row">
-            <div class="chip active" data-interval="1D">1D</div>
-            <div class="chip" data-interval="1W">1W</div>
-            <div class="chip" data-interval="1M">1M</div>
-            <div class="chip" data-interval="6M">6M</div>
-            <div class="chip" data-interval="1Y">1Y</div>
+            <div class="chip active" data-range="1M">1M</div>
+            <div class="chip" data-range="3M">3M</div>
+            <div class="chip" data-range="6M">6M</div>
+            <div class="chip" data-range="1Y">1Y</div>
           </div>
         </div>
 
         <div id="chartShell">
-          <div>
-            <p style="margin-bottom:6px;">Interactive price chart</p>
-            <p>In the live build, this area will render real candlesticks from APIs (Finnhub / broker) with drawing tools and indicators.</p>
-          </div>
+          <canvas id="priceChart"></canvas>
         </div>
 
         <div class="chart-footer">
-          <div>Open: <b>₹2,612.00</b> · High: <b>₹2,660.40</b> · Low: <b>₹2,598.70</b></div>
-          <div>Volume: <b>18.2L</b></div>
+          <div id="ohlcText">Open: — · High: — · Low: —</div>
+          <div id="volumeText">Volume: —</div>
         </div>
       </section>
 
-      <!-- RIGHT: ORDER, PORTFOLIO, NEWS -->
+      <!-- ORDER / PORTFOLIO / NEWS -->
       <aside>
-        <!-- ORDER -->
+        <!-- Order -->
         <section class="card">
           <div class="section-title">
             <span>Quick Paper Order</span>
-            <small>Simulation only</small>
+            <small>Simulation using live price</small>
           </div>
           <form class="order-form" onsubmit="event.preventDefault();">
             <label>Symbol</label>
-            <select id="orderSymbol">
-              <option value="RELIANCE">RELIANCE</option>
-              <option value="TCS">TCS</option>
-              <option value="HDFCBANK">HDFCBANK</option>
-              <option value="INFY">INFY</option>
-            </select>
+            <select id="orderSymbol"></select>
             <label>Quantity</label>
             <input type="number" id="orderQty" value="10" min="1" />
             <div class="order-actions">
@@ -387,7 +434,7 @@
           </form>
         </section>
 
-        <!-- PORTFOLIO -->
+        <!-- Portfolio -->
         <section class="card" style="margin-top:14px;">
           <div class="section-title">
             <span>Portfolio Snapshot</span>
@@ -403,28 +450,28 @@
           </table>
         </section>
 
-        <!-- NEWS / INSIGHTS -->
+        <!-- Pulse -->
         <section class="card" style="margin-top:14px;">
           <div class="section-title">
             <span>Today’s Pulse</span>
             <small>Curated ideas</small>
           </div>
-          <div class="news-item"><b>• Nifty50 holds above key support.</b><br/>Options writers keep premium as volatility cools down.</div>
-          <div class="news-item"><b>• IT & banks lead intraday recovery.</b><br/>Paper trade sector rotations to understand correlation.</div>
-          <div class="news-item"><b>• Learn: Risk per trade</b><br/>Never risk more than 1–2% of capital on a single idea.</div>
+          <div class="news-item"><b>• Tech leads the session.</b><br/>Use AAPL, MSFT & TSLA to practice momentum vs mean-reversion.</div>
+          <div class="news-item"><b>• Indices near all-time highs.</b><br/>Experiment with index ETFs SPY, QQQ, DIA in your watchlist.</div>
+          <div class="news-item"><b>• Learn: Risk per trade</b><br/>Keep each position at 1–2% of your demo capital.</div>
         </section>
       </aside>
     </div>
 
-    <!-- TOOLS & LEARN -->
-    <section class="subgrid">
+    <!-- Tools / Learn -->
+    <section class="subgrid" id="learn">
       <div class="pill-card">
         <div class="section-title">
           <span>Tools you’ll get in Alpha Investing</span>
           <small>Coming soon</small>
         </div>
         <div class="pill-row">
-          <span class="pill">SIP Calculator</span>
+          <span class="pill">SIP / DCA Planner</span>
           <span class="pill">Brokerage & Tax Estimator</span>
           <span class="pill">Options P&L Builder</span>
           <span class="pill">Basket Orders</span>
@@ -437,115 +484,490 @@
           <small>Structured path</small>
         </div>
         <ul style="font-size:11px;color:var(--muted);margin-left:16px;margin-top:6px;line-height:1.6;">
-          <li>Alpha 101: Basics of stocks, indices & derivatives.</li>
-          <li>Risk First: Position sizing and drawdown control.</li>
-          <li>Playbooks: Breakout, mean-reversion & swing strategies.</li>
+          <li>Basics of stocks, indices & ETFs.</li>
+          <li>Risk management & drawdown control.</li>
+          <li>Playbooks: breakouts, pullbacks & swing trades.</li>
         </ul>
       </div>
     </section>
   </main>
 
+  <!-- MARKETS SECTION -->
+  <section class="page-section" id="markets">
+    <h2>Markets Overview</h2>
+    <p class="section-description">
+      Global demo data via ETFs: SPY (S&amp;P 500), QQQ (Nasdaq 100), DIA (Dow Jones).
+    </p>
+    <div class="markets-grid">
+      <div class="mini-card">
+        <span class="tag">Index · SPY</span>
+        <h4>S&amp;P 500 (SPY)</h4>
+        <p id="spyLine" style="font-size:12px;margin-top:4px;">Loading…</p>
+        <p style="font-size:11px;color:var(--muted);margin-top:6px;">Use SPY as a proxy for overall market sentiment.</p>
+      </div>
+      <div class="mini-card">
+        <span class="tag">Index · QQQ</span>
+        <h4>Nasdaq 100 (QQQ)</h4>
+        <p id="qqqLine" style="font-size:12px;margin-top:4px;">Loading…</p>
+        <p style="font-size:11px;color:var(--muted);margin-top:6px;">Tech-heavy index – great for momentum experiments.</p>
+      </div>
+      <div class="mini-card">
+        <span class="tag">Index · DIA</span>
+        <h4>Dow Jones (DIA)</h4>
+        <p id="diaLine" style="font-size:12px;margin-top:4px;">Loading…</p>
+        <p style="font-size:11px;color:var(--muted);margin-top:6px;">Blue-chip large caps, more defensive than Nasdaq.</p>
+      </div>
+      <div class="mini-card">
+        <span class="tag">Heatmap</span>
+        <h4>Top Gainers & Losers</h4>
+        <p style="font-size:11px;color:var(--muted);margin-top:4px;">
+          In a later version this card will show real movers across your watchlist and sectors.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- PORTFOLIO SECTION -->
+  <section class="page-section" id="portfolio-main">
+    <h2>Portfolio View</h2>
+    <p class="section-description">
+      High-level view for your demo holdings. Live P&amp;L is shown in the Portfolio Snapshot card above.
+    </p>
+    <div class="portfolio-summary">
+      <div class="mini-card">
+        <span class="tag">Core</span>
+        <h4>Core Holdings</h4>
+        <p style="font-size:12px;margin-top:4px;">Use this for swing ideas you want to track longer.</p>
+        <ul style="font-size:11px;color:var(--muted);margin-left:16px;margin-top:6px;line-height:1.6;">
+          <li>AAPL · 10 shares – tech leader.</li>
+          <li>MSFT · 5 shares – cloud & productivity.</li>
+        </ul>
+      </div>
+      <div class="mini-card">
+        <span class="tag">Trading</span>
+        <h4>Short-Term Bets</h4>
+        <p style="font-size:12px;margin-top:4px;">Tag these as intraday, swing or news-based in the future.</p>
+        <p style="font-size:11px;color:var(--muted);margin-top:6px;">Your decisions here are more about execution speed and discipline.</p>
+      </div>
+      <div class="mini-card">
+        <span class="tag">Risk</span>
+        <h4>Risk Dashboard</h4>
+        <p style="font-size:11px;color:var(--muted);margin-top:6px;">
+          • Max drawdown (paper): 4.2%<br/>
+          • Largest single trade loss: −₹1,200<br/>
+          • Avg risk per trade: 0.7% of capital.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- PAPER TRADING SECTION -->
+  <section class="page-section" id="paper-trading">
+    <h2>How Paper Trading Works on Alpha Investing</h2>
+    <p class="section-description">
+      Orders are simulated using live market data so that you can learn execution without risking real money.
+    </p>
+    <div class="markets-grid">
+      <div class="mini-card">
+        <span class="tag">1 · Set capital</span>
+        <h4>Choose your virtual bankroll</h4>
+        <p style="font-size:11px;color:var(--muted);margin-top:6px;">
+          Start with virtual ₹1L / ₹5L / ₹10L and see how your process performs over 50–100 trades.
+        </p>
+      </div>
+      <div class="mini-card">
+        <span class="tag">2 · Place orders</span>
+        <h4>Use real-style tickets</h4>
+        <p style="font-size:11px;color:var(--muted);margin-top:6px;">
+          Market and (later) limit / SL orders are simulated using live quotes from Finnhub.
+        </p>
+      </div>
+      <div class="mini-card">
+        <span class="tag">3 · Review</span>
+        <h4>Analyse your behaviour</h4>
+        <p style="font-size:11px;color:var(--muted);margin-top:6px;">
+          Track winners, losers, time in trade and risk per idea before touching real capital.
+        </p>
+      </div>
+    </div>
+    <ol class="pt-steps" style="margin-top:14px;">
+      <li>Build a routine: review markets, plan trades, then execute what matches your plan.</li>
+      <li>Focus on process, not rupee P&amp;L at the beginning.</li>
+      <li>Graduate to real money only after a stable sample of successful paper trades.</li>
+    </ol>
+  </section>
+
   <footer>
-    © 2025 Alpha Investing. UI prototype inspired by modern Indian brokers. Data & order flows are simulated in this version.
+    © 2025 Alpha Investing. Prototype UI using Finnhub market data (US demo symbols). Not for live trading.
   </footer>
 
   <script>
-    // VERY LIGHT JS: watchlist click -> update chart title (UI only)
-    document.querySelectorAll('.watch-item').forEach(item=>{
-      item.addEventListener('click',()=>{
-        const sym = item.dataset.symbol || item.querySelector('.watch-symbol').textContent;
-        document.getElementById('chartSymbolTitle').textContent = sym + ' · NSE';
-      });
+    // ==================== CONFIG ====================
+    const FINNHUB_KEY = "d4jm60hr01qgcb0u4vg0d4jm60hr01qgcb0u4vgg";
+
+    // Watchlist symbols (US)
+    let watchlist = [
+      { display: "AAPL", api: "AAPL" },
+      { display: "MSFT", api: "MSFT" },
+      { display: "TSLA", api: "TSLA" },
+      { display: "AMZN", api: "AMZN" },
+    ];
+
+    const watchlistEl = document.getElementById("watchlist");
+    const orderSymbolSelect = document.getElementById("orderSymbol");
+    let activeSymbol = watchlist[0]; // default chart symbol
+
+    let priceChartInstance = null;
+
+    // ==================== API HELPERS ====================
+    async function fetchQuote(symbol) {
+      try {
+        const res = await fetch(
+          `https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(symbol)}&token=${FINNHUB_KEY}`
+        );
+        return await res.json();
+      } catch (e) {
+        console.error("Quote error", symbol, e);
+        return null;
+      }
+    }
+
+    async function fetchCandles(symbol, resolution, from, to) {
+      try {
+        const url = `https://finnhub.io/api/v1/stock/candle?symbol=${encodeURIComponent(
+          symbol
+        )}&resolution=${resolution}&from=${from}&to=${to}&token=${FINNHUB_KEY}`;
+        const res = await fetch(url);
+        return await res.json();
+      } catch (e) {
+        console.error("Candle error", symbol, e);
+        return null;
+      }
+    }
+
+    function fmtPrice(num) {
+      if (num === null || num === undefined || isNaN(num)) return "—";
+      return "₹" + Number(num).toFixed(2);
+    }
+
+    // ==================== WATCHLIST ====================
+    async function renderWatchlist() {
+      watchlistEl.innerHTML = "";
+      orderSymbolSelect.innerHTML = "";
+
+      for (const item of watchlist) {
+        const q = await fetchQuote(item.api);
+        const price = q && q.c ? q.c : null;
+        const change = q && typeof q.d === "number" ? q.d : null;
+        const pct = q && typeof q.dp === "number" ? q.dp : null;
+
+        const changeClass = change >= 0 ? "pos" : "neg";
+        const changeText =
+          change === null
+            ? "—"
+            : `${change >= 0 ? "+" : ""}${change.toFixed(2)} (${pct >= 0 ? "+" : ""}${pct.toFixed(2)}%)`;
+
+        const div = document.createElement("div");
+        div.className = "watch-item";
+        div.innerHTML = `
+          <div>
+            <div class="watch-symbol">${item.display}</div>
+            <div class="watch-change ${changeClass}">${changeText}</div>
+          </div>
+          <div class="watch-price">${fmtPrice(price)}</div>
+        `;
+        div.addEventListener("click", () => {
+          activeSymbol = item;
+          document.getElementById("chartSymbolTitle").textContent =
+            `${item.display} · Live`;
+          loadChartForActive();
+        });
+
+        watchlistEl.appendChild(div);
+
+        // order dropdown
+        const opt = document.createElement("option");
+        opt.value = item.display;
+        opt.textContent = item.display;
+        orderSymbolSelect.appendChild(opt);
+      }
+    }
+
+    document.getElementById("addSymbolBtn").addEventListener("click", () => {
+      const input = document.getElementById("symbolInput");
+      const val = input.value.trim().toUpperCase();
+      if (!val) return;
+      watchlist.push({ display: val, api: val });
+      input.value = "";
+      renderWatchlist();
     });
 
-    // Interval chips UI state
-    document.querySelectorAll('.chip').forEach(ch=>{
-      ch.addEventListener('click',()=>{
-        document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
-        ch.classList.add('active');
-      });
-    });
+    // ==================== CHART RANGE HELPERS ====================
+    function getRangeSeconds(rangeLabel) {
+      const now = Math.floor(Date.now() / 1000);
+      let from;
+      switch (rangeLabel) {
+        case "3M":
+          from = now - 60 * 60 * 24 * 90;
+          break;
+        case "6M":
+          from = now - 60 * 60 * 24 * 180;
+          break;
+        case "1Y":
+          from = now - 60 * 60 * 24 * 365;
+          break;
+        case "1M":
+        default:
+          from = now - 60 * 60 * 24 * 30;
+      }
+      return { from, to: now };
+    }
 
-    // Add symbol (just UI list for now)
-    document.getElementById('addSymbolBtn').addEventListener('click',()=>{
-      const input = document.getElementById('symbolInput');
-      const value = input.value.trim().toUpperCase();
-      if(!value) return;
-      const container = document.getElementById('watchlist');
-      const div = document.createElement('div');
-      div.className='watch-item';
-      div.dataset.symbol=value;
-      div.innerHTML = `
-        <div>
-          <div class="watch-symbol">${value}</div>
-          <div class="watch-change pos">0.00% · ₹0.00</div>
-        </div>
-        <div class="watch-price">₹0.00</div>
-      `;
-      div.addEventListener('click',()=>{
-        document.getElementById('chartSymbolTitle').textContent = value + ' · NSE';
-      });
-      container.appendChild(div);
-      input.value='';
-    });
+    function getActiveRangeLabel() {
+      const activeChip = document.querySelector(".chip.active");
+      return activeChip ? activeChip.dataset.range : "1M";
+    }
 
-    // Simple in-memory paper portfolio
-    const portfolio = {};
-    const portfolioTable = document.getElementById('portfolioTable').querySelector('tbody');
+    // ==================== CHART (real candles + fallback demo) ====================
+    async function loadChartForActive() {
+      const range = getActiveRangeLabel();
+      const { from, to } = getRangeSeconds(range);
+      const ctx = document.getElementById("priceChart").getContext("2d");
 
-    function renderPortfolio(){
-      portfolioTable.innerHTML='';
-      const symbols = Object.keys(portfolio);
-      if(symbols.length===0){
-        portfolioTable.innerHTML='<tr><td colspan="4" style="color:var(--muted);padding-top:4px;">No positions yet. Place a BUY trade to start.</td></tr>';
+      // Try real API candles
+      const data = await fetchCandles(activeSymbol.api, "D", from, to);
+      console.log("Candle response:", data);
+
+      // If API failed or returned no_data, use demo data
+      if (!data || data.s !== "ok" || !data.c || data.c.length === 0) {
+        console.warn("No real candle data, using demo series instead.");
+
+        const labels = [];
+        const demoData = [];
+        const now = new Date();
+        let price = 250; // starting demo price
+
+        for (let i = 29; i >= 0; i--) {
+          const d = new Date(now);
+          d.setDate(d.getDate() - i);
+          labels.push(
+            `${d.getDate()}/${d.getMonth() + 1}/${d
+              .getFullYear()
+              .toString()
+              .slice(-2)}`
+          );
+          const change = (Math.random() - 0.5) * 4; // -2 to +2
+          price = Math.max(50, price + change);
+          demoData.push(Number(price.toFixed(2)));
+        }
+
+        if (priceChartInstance) priceChartInstance.destroy();
+
+        priceChartInstance = new Chart(ctx, {
+          type: "line",
+          data: {
+            labels,
+            datasets: [
+              {
+                label: `${activeSymbol.display} price (demo)`,
+                data: demoData,
+                borderWidth: 2,
+                pointRadius: 0,
+                tension: 0.25,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              x: { display: false },
+              y: { display: true, ticks: { font: { size: 10 } } },
+            },
+            plugins: { legend: { display: false } },
+          },
+        });
+
+        document.getElementById("ohlcText").textContent =
+          "Live candles not available for this API key – showing demo price path.";
+        document.getElementById("volumeText").textContent = "Volume: demo";
         return;
       }
-      symbols.forEach(sym=>{
-        const pos = portfolio[sym];
-        const pnl = (pos.last - pos.avg) * pos.qty;
-        const row = document.createElement('tr');
+
+      // ===== Real data path =====
+      const labels = data.t.map((ts) => {
+        const d = new Date(ts * 1000);
+        return `${d.getDate()}/${d.getMonth() + 1}/${d
+          .getFullYear()
+          .toString()
+          .slice(-2)}`;
+      });
+
+      if (priceChartInstance) priceChartInstance.destroy();
+
+      priceChartInstance = new Chart(ctx, {
+        type: "line",
+        data: {
+          labels,
+          datasets: [
+            {
+              label: `${activeSymbol.display} price`,
+              data: data.c,
+              borderWidth: 2,
+              pointRadius: 0,
+              tension: 0.25,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: { display: false },
+            y: { display: true, ticks: { font: { size: 10 } } },
+          },
+          plugins: { legend: { display: false } },
+        },
+      });
+
+      const lastIdx = data.c.length - 1;
+      const open = data.o[lastIdx];
+      const high = data.h[lastIdx];
+      const low = data.l[lastIdx];
+      const vol = data.v[lastIdx];
+
+      document.getElementById("ohlcText").textContent =
+        `Open: ${fmtPrice(open)} · High: ${fmtPrice(high)} · Low: ${fmtPrice(low)}`;
+      document.getElementById("volumeText").textContent =
+        `Volume: ${vol ? vol.toLocaleString() : "—"}`;
+    }
+
+    document.querySelectorAll(".chip").forEach((chip) => {
+      chip.addEventListener("click", () => {
+        document.querySelectorAll(".chip").forEach((c) =>
+          c.classList.remove("active")
+        );
+        chip.classList.add("active");
+        loadChartForActive();
+      });
+    });
+
+    // ==================== INDICES (SPY/QQQ/DIA) ====================
+    async function updateIndices() {
+      const spy = await fetchQuote("SPY");
+      const qqq = await fetchQuote("QQQ");
+      const dia = await fetchQuote("DIA");
+
+      function lineFor(q) {
+        if (!q || !q.c) return "Data unavailable.";
+        const diff = q.d;
+        const pct = q.dp;
+        const col = diff >= 0 ? "#22c55e" : "#f97373";
+        return `₹${q.c.toFixed(2)} <span style="color:${col};font-weight:600;">${diff>=0?"+":""}${diff.toFixed(2)} (${pct>=0?"+":""}${pct.toFixed(2)}%)</span>`;
+      }
+
+      document.getElementById("spyLine").innerHTML = lineFor(spy);
+      document.getElementById("qqqLine").innerHTML = lineFor(qqq);
+      document.getElementById("diaLine").innerHTML = lineFor(dia);
+    }
+
+    // ==================== PAPER PORTFOLIO ====================
+    const portfolio = {};
+    const portfolioTable = document
+      .getElementById("portfolioTable")
+      .querySelector("tbody");
+
+    async function placeTrade(side) {
+      const symbol = document.getElementById("orderSymbol").value;
+      const qty = Number(document.getElementById("orderQty").value) || 0;
+      if (qty <= 0) return alert("Enter a valid quantity");
+      const apiSymbol = symbol; // US symbols same for API
+
+      const q = await fetchQuote(apiSymbol);
+      const price = q && q.c ? q.c : null;
+      if (!price) return alert("Could not fetch live price.");
+
+      if (side === "BUY") {
+        if (!portfolio[symbol]) portfolio[symbol] = { qty: 0, avg: 0, last: price };
+        const p = portfolio[symbol];
+        const newAvg = (p.avg * p.qty + price * qty) / (p.qty + qty);
+        p.qty += qty;
+        p.avg = newAvg;
+        p.last = price;
+      } else {
+        if (!portfolio[symbol] || portfolio[symbol].qty < qty) {
+          return alert("Not enough quantity in paper portfolio.");
+        }
+        const p = portfolio[symbol];
+        p.qty -= qty;
+        p.last = price;
+        if (p.qty === 0) delete portfolio[symbol];
+      }
+
+      renderPortfolio();
+      alert(`Paper ${side} order executed for ${qty} ${symbol} at ₹${price.toFixed(2)} (demo).`);
+    }
+
+    async function refreshPortfolioPrices() {
+      const symbols = Object.keys(portfolio);
+      for (const sym of symbols) {
+        const q = await fetchQuote(sym);
+        if (q && q.c) portfolio[sym].last = q.c;
+      }
+      renderPortfolio();
+    }
+
+    function renderPortfolio() {
+      portfolioTable.innerHTML = "";
+      const symbols = Object.keys(portfolio);
+      if (symbols.length === 0) {
+        portfolioTable.innerHTML =
+          '<tr><td colspan="4" style="color:var(--muted);padding-top:4px;">No positions yet. Place a BUY trade to start.</td></tr>';
+        return;
+      }
+      symbols.forEach((sym) => {
+        const p = portfolio[sym];
+        const pnl = (p.last - p.avg) * p.qty;
+        const row = document.createElement("tr");
         row.innerHTML = `
           <td>${sym}</td>
-          <td>${pos.qty}</td>
-          <td>₹${pos.avg.toFixed(2)}</td>
+          <td>${p.qty}</td>
+          <td>₹${p.avg.toFixed(2)}</td>
           <td style="color:${pnl>=0?'#22c55e':'#f97373'}">${pnl>=0?'+':''}₹${pnl.toFixed(2)}</td>
         `;
         portfolioTable.appendChild(row);
       });
     }
 
-    function simulatePrice(symbol){
-      // purely fake numbers based on symbol length – placeholder until APIs
-      const base = 2000 + symbol.length * 70;
-      return base + (Math.random()-0.5)*40;
-    }
+    document.getElementById("buyBtn").addEventListener("click", () =>
+      placeTrade("BUY")
+    );
+    document.getElementById("sellBtn").addEventListener("click", () =>
+      placeTrade("SELL")
+    );
 
-    function placeTrade(side){
-      const sym = document.getElementById('orderSymbol').value;
-      const qty = Number(document.getElementById('orderQty').value) || 0;
-      if(qty<=0) return alert('Enter a valid quantity');
-      const price = simulatePrice(sym);
+    // ==================== NAV ACTIVE STATE ====================
+    document.querySelectorAll('.nav-links a[href^="#"]').forEach((link) => {
+      link.addEventListener("click", () => {
+        document
+          .querySelectorAll(".nav-links a")
+          .forEach((l) => l.classList.remove("active"));
+        link.classList.add("active");
+      });
+    });
 
-      if(side==='BUY'){
-        if(!portfolio[sym]) portfolio[sym]={qty:0,avg:0,last:price};
-        const p = portfolio[sym];
-        const newAvg = (p.avg*p.qty + price*qty)/(p.qty+qty);
-        p.qty += qty; p.avg = newAvg; p.last = price;
-      }else{
-        if(!portfolio[sym] || portfolio[sym].qty < qty){
-          return alert('Not enough quantity in paper portfolio');
-        }
-        const p = portfolio[sym];
-        p.qty -= qty; p.last = price;
-        if(p.qty===0) delete portfolio[sym];
-      }
-      renderPortfolio();
-      alert(`Paper ${side} order executed for ${qty} ${sym} at ₹${price.toFixed(2)} (demo).`);
-    }
+    // ==================== INIT ====================
+    (async function init() {
+      await renderWatchlist();
+      await loadChartForActive();
+      await updateIndices();
+      await refreshPortfolioPrices();
 
-    document.getElementById('buyBtn').addEventListener('click',()=>placeTrade('BUY'));
-    document.getElementById('sellBtn').addEventListener('click',()=>placeTrade('SELL'));
+      // refresh data periodically
+      setInterval(renderWatchlist, 30000);        // watchlist every 30s
+      setInterval(updateIndices, 60000);          // indices every 60s
+      setInterval(refreshPortfolioPrices, 45000); // portfolio every 45s
+    })();
   </script>
-
 </body>
 </html>
